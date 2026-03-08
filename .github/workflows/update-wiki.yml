@@ -1,0 +1,61 @@
+name: Sync Wiki to GitHub Wiki repo
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/update-wiki.yml'
+  workflow_dispatch:
+
+jobs:
+  update-wiki:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate Sidebar
+        run: |
+          python scripts/generate_sidebar.py
+
+      - name: Copy Wiki Contents to separate directory
+        run: |
+          mkdir /tmp/wiki-build
+          cp -R wiki/* /tmp/wiki-build/
+
+      - name: Checkout Wiki Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: .wiki
+          # A personal access token is sometimes required to push to the wiki repo
+          # if the default GITHUB_TOKEN lacks permissions.
+          token: ${{ secrets.GITHUB_TOKEN }} 
+          
+      - name: Deploy to Wiki
+        run: |
+          cd .wiki
+          # Remove old wiki files except the .git directory
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          
+          # Copy the newly generated and collected markdown files
+          cp -R /tmp/wiki-build/* .
+          
+          # Configure Git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Commit and Push
+          git add .
+          git commit -m "docs: auto-update wiki and sidebar [skip ci]" || echo "No changes to commit"
+          git push
