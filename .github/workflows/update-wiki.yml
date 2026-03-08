@@ -34,6 +34,8 @@ jobs:
           cp -R wiki/* /tmp/wiki-build/
 
       - name: Checkout Wiki Repository
+        id: checkout-wiki
+        continue-on-error: true
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository }}.wiki
@@ -43,7 +45,20 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }} 
           
       - name: Deploy to Wiki
+        env:
+          WIKI_REPO: https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
         run: |
+          # If the checkout step failed (e.g., repository not found because wiki is uninitialized),
+          # we manually initialize a repository.
+          if [ ! -d ".wiki/.git" ]; then
+            echo "Wiki repository not found locally. It might be uninitialized."
+            mkdir -p .wiki
+            cd .wiki
+            git init
+            git remote add origin ${WIKI_REPO}
+            cd ..
+          fi
+          
           cd .wiki
           # Remove old wiki files except the .git directory
           find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
@@ -58,4 +73,6 @@ jobs:
           # Commit and Push
           git add .
           git commit -m "docs: auto-update wiki and sidebar [skip ci]" || echo "No changes to commit"
-          git push
+          
+          # Force push to master, as wikis typically use master
+          git push -u origin HEAD:master --force
