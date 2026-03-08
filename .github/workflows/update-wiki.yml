@@ -34,15 +34,10 @@ jobs:
           cp -R wiki/* /tmp/wiki-build/
 
       - name: Checkout Wiki Repository
-        id: checkout-wiki
-        continue-on-error: true
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository }}.wiki
-          path: .wiki
-          # A personal access token is sometimes required to push to the wiki repo
-          # if the default GITHUB_TOKEN lacks permissions.
-          token: ${{ secrets.GITHUB_TOKEN }} 
+        env:
+          WIKI_REPO: https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+        run: |
+          git clone $WIKI_REPO .wiki || echo "Wiki repo not found or empty. It will be initialized in the next step." 
           
       - name: Deploy to Wiki
         env:
