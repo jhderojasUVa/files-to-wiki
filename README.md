@@ -30,6 +30,8 @@ Whenever a structural or wording improvement is identified, the AI Reviewer auto
 
 If you intend to use this structural setup, here is what you need to configure:
 
-1.  **Enable GitHub Wiki:** Ensure that your repository's settings have the Wiki feature enabled.
+1.  **Enable and Initialize GitHub Wiki (CRITICAL):** 
+    - Ensure that your repository's settings have the Wiki feature enabled.
+    - **IMPORTANT:** You *must* navigate to the "Wiki" tab on your GitHub repository and click **"Create the first page"** manually at least once. Save the dummy page. If you do not do this, GitHub does not physically allocate the `.wiki.git` repository backend, and the GitHub Action pipeline will crash with a `Repository not found` error.
 2.  **Action Write Permissions:** Ensure your GitHub Actions have `write` permission for both the repo and Pull Requests. This is mandated within the Workflow YAMLs, but your organization settings must also allow Actions to submit comments.
 3.  **GitHub Models Access:** Since this utilizes GitHub Models endpoints (`https://models.inference.ai.azure.com`), the script relies on your GitHub Authentication via `GITHUB_TOKEN`. Make sure your account has access to GitHub Models. If your default `GITHUB_TOKEN` lacks Copilot/Models scope, you may need to map a Personal Access Token with the required scopes into the `GITHUB_TOKEN` environment variable in the workflow.
